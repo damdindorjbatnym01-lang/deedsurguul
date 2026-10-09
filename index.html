@@ -1,25 +1,4 @@
-// ============================================================
-//  Хөвсгөл Политехник Коллеж - НЭГ ФАЙЛТ САЙТ + BACKEND
-//  Ажиллуулах:  npm install express cors express-rate-limit better-sqlite3
-//               ADMIN_PASSWORD=нууцҮг node server.js
-//  Сайт:  http://localhost:3000     Админ:  http://localhost:3000/admin
-// ============================================================
-const path = require('path');
-const express = require('express');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const Database = require('better-sqlite3');
-
-const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
-
-if (!process.env.ADMIN_PASSWORD) {
-  console.warn('АНХААРУУЛГА: ADMIN_PASSWORD тохируулаагүй тул "admin123" ашиглаж байна. Заавал солино уу!');
-}
-
-// ---------------- ХУУДАСНУУД (HTML) ----------------
-const INDEX_HTML = String.raw`<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="mn">
 <head>
 <meta charset="UTF-8">
@@ -29,6 +8,8 @@ const INDEX_HTML = String.raw`<!DOCTYPE html>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { font-family: Arial, sans-serif; color: #222; background: #fff; }
+
+/* HEADER */
 header { background: white; }
 .top-header { height: 100px; max-width: 1200px; margin: auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
 .school-info { display: flex; align-items: center; gap: 15px; }
@@ -36,10 +17,14 @@ header { background: white; }
 .school-info h2 { font-size: 14px; color: #174d8c; }
 .school-info h1 { font-size: 21px; color: #174d8c; }
 .contact { text-align: right; color: #777; font-size: 12px; line-height: 22px; }
+
+/* NAVBAR */
 nav { background: #064a91; position: sticky; top: 0; z-index: 100; }
 .nav-container { max-width: 1200px; height: 48px; margin: auto; padding: 0 20px; display: flex; align-items: center; gap: 30px; }
 .nav-container a { color: white; text-decoration: none; font-size: 12px; font-weight: bold; padding: 17px 0; }
 .nav-container a:hover { color: #ffd000; }
+
+/* HERO */
 .hero { height: 460px; background-image: url("https://images.unsplash.com/photo-1581091226825-a6a2a5aee158"); background-size: cover; background-position: center; background-color: #064a91; }
 .hero-overlay { width: 100%; height: 100%; background: linear-gradient(90deg, rgba(0,0,0,.75), rgba(0,0,0,.15)); display: flex; align-items: center; }
 .hero-content { max-width: 1200px; width: 100%; margin: auto; padding-left: 20px; color: white; }
@@ -47,12 +32,16 @@ nav { background: #064a91; position: sticky; top: 0; z-index: 100; }
 .hero-content p { font-size: 18px; margin-bottom: 30px; }
 .hero-button { display: inline-block; background: #ffd000; color: #111; padding: 15px 25px; text-decoration: none; font-weight: bold; border-radius: 3px; }
 .hero-button:hover { background: white; }
+
+/* INTRO */
 .intro { max-width: 1000px; margin: auto; padding: 80px 20px; text-align: center; }
 .intro h2 { color: #064a91; font-size: 32px; }
 .yellow-line { width: 50px; height: 4px; background: #ffd000; margin: 15px auto 30px; }
 .intro p { color: #666; line-height: 1.8; margin-bottom: 8px; }
 .register-button { display: inline-block; margin-top: 25px; background: #064a91; color: white; text-decoration: none; padding: 14px 25px; font-weight: bold; }
 .register-button:hover { background: #ffd000; color: #111; }
+
+/* SPECIALITIES */
 .specialities { background: #f5f7fa; padding: 70px 20px; }
 .section-title { text-align: center; margin-bottom: 40px; }
 .section-title h2 { color: #064a91; font-size: 30px; }
@@ -63,6 +52,8 @@ nav { background: #064a91; position: sticky; top: 0; z-index: 100; }
 .icon { font-size: 45px; margin-bottom: 15px; }
 .speciality-card h3 { color: #064a91; margin-bottom: 12px; }
 .speciality-card p { color: #777; line-height: 1.6; font-size: 14px; }
+
+/* REGISTER */
 .register-section { padding: 60px 20px; background: #f4f6f9; scroll-margin-top: 48px; }
 .register-box { max-width: 700px; margin: auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,.1); }
 .register-title { text-align: center; color: #064a91; font-size: 32px; margin-bottom: 10px; }
@@ -76,16 +67,18 @@ nav { background: #064a91; position: sticky; top: 0; z-index: 100; }
 .gender input { margin-right: 5px; }
 .submit-button { width: 100%; padding: 15px; border: none; border-radius: 4px; background: #064a91; color: white; font-size: 16px; font-weight: bold; cursor: pointer; }
 .submit-button:hover { background: #ffd000; color: #111; }
-.submit-button:disabled { opacity: .6; cursor: wait; }
 .back-button { display: block; text-align: center; margin-top: 20px; color: #064a91; text-decoration: none; font-weight: bold; }
 .back-button:hover { color: #ffd000; }
 #success { display: none; margin-top: 20px; padding: 15px; background: #e6f4ea; color: #1e6b34; border-radius: 4px; text-align: center; font-weight: bold; }
-#success.error { background: #fdecea; color: #b3261e; }
+
+/* FOOTER */
 footer { background: #064a91; color: white; padding-top: 40px; }
 .footer-content { max-width: 1100px; margin: auto; padding: 0 20px 35px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 .footer-content h3 { font-size: 14px; margin-bottom: 5px; }
 .footer-content p { font-size: 13px; margin-bottom: 8px; }
 .copyright { text-align: center; background: #043d78; padding: 15px; font-size: 12px; }
+
+/* MOBILE */
 @media (max-width: 900px) {
   .contact { display: none; }
   .hero { height: 380px; }
@@ -107,8 +100,10 @@ footer { background: #064a91; color: white; padding-top: 40px; }
 }
 </style>
 </head>
+
 <body>
 
+<!-- HEADER -->
 <header id="top">
   <div class="top-header">
     <div class="school-info">
@@ -123,6 +118,7 @@ footer { background: #064a91; color: white; padding-top: 40px; }
       ✉ polytechniccollege.kh@gmail.com
     </div>
   </div>
+
   <nav>
     <div class="nav-container">
       <a href="#top">⌂ НҮҮР</a>
@@ -133,6 +129,7 @@ footer { background: #064a91; color: white; padding-top: 40px; }
   </nav>
 </header>
 
+<!-- HERO -->
 <section class="hero">
   <div class="hero-overlay">
     <div class="hero-content">
@@ -143,6 +140,7 @@ footer { background: #064a91; color: white; padding-top: 40px; }
   </div>
 </section>
 
+<!-- ABOUT -->
 <section class="intro" id="about">
   <h2>ЭЛСЭЛТ</h2>
   <div class="yellow-line"></div>
@@ -151,19 +149,37 @@ footer { background: #064a91; color: white; padding-top: 40px; }
   <a href="#register" class="register-button">ЭЛСЭЛТИЙН БҮРТГЭЛ →</a>
 </section>
 
+<!-- SPECIALITIES -->
 <section class="specialities" id="specialities">
   <div class="section-title">
     <h2>МЭРГЭЖЛИЙН ЧИГЛЭЛҮҮД</h2>
     <div></div>
   </div>
   <div class="cards">
-    <div class="speciality-card"><div class="icon">💻</div><h3>Мэдээллийн технологи</h3><p>Программ хангамж, мэдээллийн технологийн чиглэл.</p></div>
-    <div class="speciality-card"><div class="icon">⚙️</div><h3>Механик</h3><p>Машин механизм болон техникийн чиглэлээр суралцана.</p></div>
-    <div class="speciality-card"><div class="icon">👨‍🍳</div><h3>Тогооч</h3><p>Хоол үйлдвэрлэл, үйлчилгээний мэргэжил.</p></div>
-    <div class="speciality-card"><div class="icon">🏗️</div><h3>Барилга</h3><p>Барилгын техник болон үйлдвэрлэлийн чиглэл.</p></div>
+    <div class="speciality-card">
+      <div class="icon">💻</div>
+      <h3>Мэдээллийн технологи</h3>
+      <p>Программ хангамж, мэдээллийн технологийн чиглэл.</p>
+    </div>
+    <div class="speciality-card">
+      <div class="icon">⚙️</div>
+      <h3>Механик</h3>
+      <p>Машин механизм болон техникийн чиглэлээр суралцана.</p>
+    </div>
+    <div class="speciality-card">
+      <div class="icon">👨‍🍳</div>
+      <h3>Тогооч</h3>
+      <p>Хоол үйлдвэрлэл, үйлчилгээний мэргэжил.</p>
+    </div>
+    <div class="speciality-card">
+      <div class="icon">🏗️</div>
+      <h3>Барилга</h3>
+      <p>Барилгын техник болон үйлдвэрлэлийн чиглэл.</p>
+    </div>
   </div>
 </section>
 
+<!-- REGISTER -->
 <section class="register-section" id="register">
   <div class="register-box">
     <h1 class="register-title">ЭЛСЭЛТИЙН БҮРТГЭЛ</h1>
@@ -175,16 +191,19 @@ footer { background: #064a91; color: white; padding-top: 40px; }
     <form id="regForm">
       <div class="form-group">
         <label>Овог, нэр *</label>
-        <input type="text" name="full_name" placeholder="Овог нэрээ оруулна уу" maxlength="100" required>
+        <input type="text" placeholder="Овог нэрээ оруулна уу" required>
       </div>
+
       <div class="form-group">
         <label>Регистрийн дугаар *</label>
-        <input type="text" name="register_no" placeholder="Жишээ: УБ12345678" maxlength="10" pattern="[А-ЯӨҮа-яөү]{2}[0-9]{8}" title="2 крилл үсэг + 8 тоо (жишээ: УБ12345678)" required>
+        <input type="text" placeholder="Регистрийн дугаар" maxlength="10" required>
       </div>
+
       <div class="form-group">
         <label>Төрсөн огноо *</label>
-        <input type="date" name="birth_date" required>
+        <input type="date" required>
       </div>
+
       <div class="form-group">
         <label>Хүйс *</label>
         <div class="gender">
@@ -192,17 +211,20 @@ footer { background: #064a91; color: white; padding-top: 40px; }
           <label><input type="radio" name="gender" value="female"> Эмэгтэй</label>
         </div>
       </div>
+
       <div class="form-group">
         <label>Утасны дугаар *</label>
-        <input type="tel" name="phone" placeholder="Жишээ: 99112233" maxlength="8" pattern="[0-9]{8}" title="8 оронтой дугаар" required>
+        <input type="tel" placeholder="Жишээ: 99112233" required>
       </div>
+
       <div class="form-group">
         <label>И-мэйл</label>
-        <input type="email" name="email" placeholder="example@gmail.com" maxlength="100">
+        <input type="email" placeholder="example@gmail.com">
       </div>
+
       <div class="form-group">
         <label>Сонгох мэргэжил *</label>
-        <select name="speciality" required>
+        <select required>
           <option value="">-- Мэргэжлээ сонгоно уу --</option>
           <option>Мэдээллийн технологи</option>
           <option>Механик</option>
@@ -210,355 +232,46 @@ footer { background: #064a91; color: white; padding-top: 40px; }
           <option>Барилга</option>
         </select>
       </div>
+
       <div class="form-group">
         <label>Төгссөн сургууль *</label>
-        <input type="text" name="school" placeholder="Төгссөн сургуулийн нэр" maxlength="150" required>
+        <input type="text" placeholder="Төгссөн сургуулийн нэр" required>
       </div>
 
-      <button type="submit" class="submit-button" id="submitBtn">БҮРТГҮҮЛЭХ</button>
-      <div id="success" role="status"></div>
+      <button type="submit" class="submit-button">БҮРТГҮҮЛЭХ</button>
+      <div id="success">Таны бүртгэл амжилттай илгээгдлээ!</div>
     </form>
 
     <a href="#top" class="back-button">↑ Дээш буцах</a>
   </div>
 </section>
 
+<!-- FOOTER -->
 <footer>
   <div class="footer-content">
-    <div><h3>ХӨВСГӨЛ АЙМАГ ДАХЬ</h3><h3>ПОЛИТЕХНИК КОЛЛЕЖ</h3></div>
-    <div><p>☎ +976-99382221</p><p>✉ polytechniccollege.kh@gmail.com</p></div>
-    <div><p>📍 Хөвсгөл аймаг, Мөрөн сум</p></div>
+    <div>
+      <h3>ХӨВСГӨЛ АЙМАГ ДАХЬ</h3>
+      <h3>ПОЛИТЕХНИК КОЛЛЕЖ</h3>
+    </div>
+    <div>
+      <p>☎ +976-99382221</p>
+      <p>✉ polytechniccollege.kh@gmail.com</p>
+    </div>
+    <div>
+      <p>📍 Хөвсгөл аймаг, Мөрөн сум</p>
+    </div>
   </div>
   <div class="copyright">© 2026 Хөвсгөл Политехник Коллеж</div>
 </footer>
 
 <script>
-  var form = document.getElementById('regForm');
-  var box = document.getElementById('success');
-  var btn = document.getElementById('submitBtn');
-
-  function show(msg, isError) {
-    box.textContent = msg;
-    box.className = isError ? 'error' : '';
-    box.style.display = 'block';
-  }
-
-  form.addEventListener('submit', async function (e) {
+  // Маягт илгээхэд хуудас дахин ачаалахгүй, амжилттай мессеж гаргана
+  document.getElementById('regForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    box.style.display = 'none';
-    var payload = Object.fromEntries(new FormData(form).entries());
-    payload.register_no = (payload.register_no || '').toUpperCase();
-
-    btn.disabled = true;
-    btn.textContent = 'ИЛГЭЭЖ БАЙНА...';
-    try {
-      var res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      var data = await res.json().catch(function () { return {}; });
-      if (res.ok) {
-        show('Таны бүртгэл амжилттай илгээгдлээ! Баярлалаа.', false);
-        form.reset();
-      } else {
-        show(data.error || 'Алдаа гарлаа. Дахин оролдоно уу.', true);
-      }
-    } catch (err) {
-      show('Серверт холбогдож чадсангүй. Интернэт холболтоо шалгаад дахин оролдоно уу.', true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'БҮРТГҮҮЛЭХ';
-    }
+    document.getElementById('success').style.display = 'block';
+    this.reset();
   });
 </script>
+
 </body>
-</html>`;
-
-const ADMIN_HTML = String.raw`<!DOCTYPE html>
-<html lang="mn">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title>Админ - Элсэлтийн бүртгэл</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: Arial, sans-serif; background: #f4f6f9; color: #222; }
-.bar { background: #064a91; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-.bar h1 { font-size: 18px; }
-.wrap { max-width: 1300px; margin: 20px auto; padding: 0 20px; }
-.login { max-width: 360px; margin: 80px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,.1); }
-.login h2 { color: #064a91; margin-bottom: 15px; }
-input, select, button { font-size: 15px; }
-input[type=password], input[type=search], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; }
-button { padding: 11px 18px; border: none; border-radius: 4px; background: #064a91; color: white; font-weight: bold; cursor: pointer; }
-button:hover { background: #0a5cb5; }
-button.danger { background: #c0392b; padding: 6px 10px; font-size: 12px; }
-button.light { background: white; color: #064a91; }
-.login button { width: 100%; margin-top: 12px; }
-.msg { color: #b3261e; margin-top: 10px; font-size: 14px; }
-.tools { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
-.tools input[type=search] { max-width: 300px; }
-.tools select { max-width: 220px; }
-.count { color: #555; margin-left: auto; font-size: 14px; }
-.table-wrap { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; white-space: nowrap; }
-th { background: #f0f4fa; color: #064a91; }
-tr:hover td { background: #fafbfd; }
-.hidden { display: none; }
-</style>
-</head>
-<body>
-
-<div id="loginView" class="login">
-  <h2>Админ нэвтрэх</h2>
-  <input type="password" id="pw" placeholder="Нууц үг" autocomplete="current-password">
-  <button id="loginBtn">Нэвтрэх</button>
-  <div class="msg" id="loginMsg"></div>
-</div>
-
-<div id="appView" class="hidden">
-  <div class="bar">
-    <h1>Элсэлтийн бүртгэлүүд</h1>
-    <div>
-      <button class="light" id="csvBtn">⬇ CSV татах</button>
-      <button class="light" id="logoutBtn">Гарах</button>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="tools">
-      <input type="search" id="q" placeholder="Нэр, регистр, утас хайх...">
-      <select id="spec">
-        <option value="">Бүх мэргэжил</option>
-        <option>Мэдээллийн технологи</option>
-        <option>Механик</option>
-        <option>Тогооч</option>
-        <option>Барилга</option>
-      </select>
-      <button id="refreshBtn">⟳ Шинэчлэх</button>
-      <span class="count" id="count"></span>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th><th>Овог, нэр</th><th>Регистр</th><th>Төрсөн огноо</th><th>Хүйс</th>
-            <th>Утас</th><th>И-мэйл</th><th>Мэргэжил</th><th>Сургууль</th><th>Огноо (UTC)</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<script>
-  var $ = function (id) { return document.getElementById(id); };
-  var password = sessionStorage.getItem('adminPw') || '';
-  var all = [];
-
-  function headers() { return { 'x-admin-password': password }; }
-
-  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ESC[c]; });
-  }
-
-  async function load() {
-    var res = await fetch('/api/admin/registrations', { headers: headers() });
-    if (res.status === 401) throw new Error('Нууц үг буруу байна.');
-    if (!res.ok) throw new Error('Алдаа гарлаа (' + res.status + ').');
-    all = await res.json();
-    render();
-  }
-
-  function render() {
-    var q = $('q').value.trim().toLowerCase();
-    var spec = $('spec').value;
-    var list = all.filter(function (r) {
-      if (spec && r.speciality !== spec) return false;
-      if (!q) return true;
-      return [r.full_name, r.register_no, r.phone, r.school].some(function (v) {
-        return String(v).toLowerCase().indexOf(q) !== -1;
-      });
-    });
-    $('count').textContent = 'Нийт: ' + list.length + ' / ' + all.length;
-    $('rows').innerHTML = list.map(function (r) {
-      return '<tr>' +
-        '<td>' + r.id + '</td>' +
-        '<td>' + esc(r.full_name) + '</td>' +
-        '<td>' + esc(r.register_no) + '</td>' +
-        '<td>' + esc(r.birth_date) + '</td>' +
-        '<td>' + (r.gender === 'male' ? 'Эр' : 'Эм') + '</td>' +
-        '<td>' + esc(r.phone) + '</td>' +
-        '<td>' + esc(r.email) + '</td>' +
-        '<td>' + esc(r.speciality) + '</td>' +
-        '<td>' + esc(r.school) + '</td>' +
-        '<td>' + esc(r.created_at) + '</td>' +
-        '<td><button class="danger" data-id="' + r.id + '">Устгах</button></td>' +
-        '</tr>';
-    }).join('');
-  }
-
-  async function enter() {
-    try {
-      await load();
-      sessionStorage.setItem('adminPw', password);
-      $('loginView').classList.add('hidden');
-      $('appView').classList.remove('hidden');
-    } catch (e) {
-      password = '';
-      sessionStorage.removeItem('adminPw');
-      $('loginMsg').textContent = e.message || 'Серверт холбогдож чадсангүй.';
-    }
-  }
-
-  $('loginBtn').onclick = function () { password = $('pw').value; $('loginMsg').textContent = ''; enter(); };
-  $('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
-  $('logoutBtn').onclick = function () { sessionStorage.removeItem('adminPw'); location.reload(); };
-  $('refreshBtn').onclick = function () { load().catch(function (e) { alert(e.message); }); };
-  $('q').oninput = render;
-  $('spec').onchange = render;
-
-  $('rows').addEventListener('click', async function (e) {
-    var id = e.target.dataset && e.target.dataset.id;
-    if (!id) return;
-    if (!confirm('Энэ бүртгэлийг устгах уу? Буцаах боломжгүй.')) return;
-    var res = await fetch('/api/admin/registrations/' + id, { method: 'DELETE', headers: headers() });
-    if (res.ok) {
-      all = all.filter(function (r) { return String(r.id) !== id; });
-      render();
-    } else alert('Устгаж чадсангүй.');
-  });
-
-  $('csvBtn').onclick = async function () {
-    var res = await fetch('/api/admin/export.csv', { headers: headers() });
-    if (!res.ok) return alert('CSV татаж чадсангүй.');
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(await res.blob());
-    a.download = 'elselt.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  if (password) enter();
-</script>
-</body>
-</html>`;
-
-// ---------------- БААЗ ----------------
-const db = new Database(DB_PATH);
-db.exec(`
-  CREATE TABLE IF NOT EXISTS registrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    full_name TEXT NOT NULL,
-    register_no TEXT NOT NULL UNIQUE,
-    birth_date TEXT NOT NULL,
-    gender TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    email TEXT,
-    speciality TEXT NOT NULL,
-    school TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`);
-const insertStmt = db.prepare(`
-  INSERT INTO registrations
-    (full_name, register_no, birth_date, gender, phone, email, speciality, school)
-  VALUES (@full_name, @register_no, @birth_date, @gender, @phone, @email, @speciality, @school)
-`);
-
-// ---------------- СЕРВЕР ----------------
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: '20kb' }));
-
-const SPECIALITIES = ['Мэдээллийн технологи', 'Механик', 'Тогооч', 'Барилга'];
-const REGISTER_RE = /^[А-ЯӨҮ]{2}\d{8}$/;
-const PHONE_RE = /^\d{8}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const clean = (v, max = 200) => String(v ?? '').trim().slice(0, max);
-
-app.get('/', (req, res) => res.type('html').send(INDEX_HTML));
-app.get(['/admin', '/admin.html'], (req, res) => res.type('html').send(ADMIN_HTML));
-
-const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу.' },
-});
-
-app.post('/api/register', registerLimiter, (req, res) => {
-  const b = req.body || {};
-  const data = {
-    full_name: clean(b.full_name, 100),
-    register_no: clean(b.register_no, 10).toUpperCase(),
-    birth_date: clean(b.birth_date, 10),
-    gender: clean(b.gender, 10),
-    phone: clean(b.phone, 8),
-    email: clean(b.email, 100),
-    speciality: clean(b.speciality, 60),
-    school: clean(b.school, 150),
-  };
-
-  if (data.full_name.length < 2) return res.status(400).json({ error: 'Овог, нэрээ зөв оруулна уу.' });
-  if (!REGISTER_RE.test(data.register_no)) return res.status(400).json({ error: 'Регистрийн дугаар буруу байна (жишээ: УБ12345678).' });
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.birth_date)) return res.status(400).json({ error: 'Төрсөн огноо буруу байна.' });
-  if (!['male', 'female'].includes(data.gender)) return res.status(400).json({ error: 'Хүйсээ сонгоно уу.' });
-  if (!PHONE_RE.test(data.phone)) return res.status(400).json({ error: 'Утасны дугаар 8 оронтой байна.' });
-  if (data.email && !EMAIL_RE.test(data.email)) return res.status(400).json({ error: 'И-мэйл хаяг буруу байна.' });
-  if (!SPECIALITIES.includes(data.speciality)) return res.status(400).json({ error: 'Мэргэжлээ сонгоно уу.' });
-  if (data.school.length < 2) return res.status(400).json({ error: 'Төгссөн сургуулиа оруулна уу.' });
-
-  try {
-    const info = insertStmt.run(data);
-    res.status(201).json({ ok: true, id: info.lastInsertRowid });
-  } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-      return res.status(409).json({ error: 'Энэ регистрийн дугаараар аль хэдийн бүртгүүлсэн байна.' });
-    }
-    console.error(err);
-    res.status(500).json({ error: 'Серверийн алдаа гарлаа. Дахин оролдоно уу.' });
-  }
-});
-
-// ---------------- АДМИН API ----------------
-const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
-
-function adminAuth(req, res, next) {
-  if (req.get('x-admin-password') !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Нууц үг буруу байна.' });
-  }
-  next();
-}
-
-app.get('/api/admin/registrations', adminLimiter, adminAuth, (req, res) => {
-  res.json(db.prepare('SELECT * FROM registrations ORDER BY id DESC').all());
-});
-
-app.delete('/api/admin/registrations/:id', adminLimiter, adminAuth, (req, res) => {
-  const info = db.prepare('DELETE FROM registrations WHERE id = ?').run(Number(req.params.id));
-  res.json({ ok: true, deleted: info.changes });
-});
-
-app.get('/api/admin/export.csv', adminLimiter, adminAuth, (req, res) => {
-  const rows = db.prepare('SELECT * FROM registrations ORDER BY id').all();
-  const cols = ['id', 'full_name', 'register_no', 'birth_date', 'gender', 'phone', 'email', 'speciality', 'school', 'created_at'];
-  const esc = (v) => {
-    let s = String(v ?? '');
-    if (/^[=+\-@]/.test(s)) s = "'" + s;
-    return '"' + s.replace(/"/g, '""') + '"';
-  };
-  const csv = '﻿' + [cols.join(',')].concat(rows.map((r) => cols.map((c) => esc(r[c])).join(','))).join('\r\n');
-  res.set({
-    'Content-Type': 'text/csv; charset=utf-8',
-    'Content-Disposition': 'attachment; filename="elselt.csv"',
-  });
-  res.send(csv);
-});
-
-app.get('/api/health', (req, res) => res.json({ ok: true }));
-
-app.listen(PORT, () => console.log('Сервер ажиллаж байна: http://localhost:' + PORT));
+</html>
